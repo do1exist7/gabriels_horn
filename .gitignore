@@ -1,0 +1,24 @@
+# LaTeX intermediate and output files
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+*.lof
+*.lot
+*.lol
+*.nav
+*.snm
+*.vrb
+
+# Ignore all VS Code configs
+.vscode/*
+# But keep settings and extension
+!.vscode/settings.json
+!.vscode/extensions.json

@@ -1,0 +1,178 @@
+\documentclass[border=10pt]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{math}
+\usepackage{tikz-3dplot}
+\begin{document}
+\makeatletter
+\tikzset{%
+  view/.style 2 args={%  observer longitude and latitude (y upwards)
+                      %  Remark. lomg=0 means x=0
+    z={({-sin(#1)}, {-cos(#1)*sin(#2)})},
+    x={({cos(#1)}, {-sin(#1)*sin(#2)})},
+    y={(0, {cos(#2)})},
+    evaluate={%
+      \tox={sin(#1)*cos(#2)};
+      \toy={sin(#2)};
+      \toz={cos(#1)*cos(#2)};
+    },
+    longitude = #1,
+    latitude = #2
+  },
+  sun/.style n args={3}{% longitude, latitude, light contrast in [0, 1]
+    sun longitude = #1,
+    sun latitude = #2,
+    contrast = #3,
+    evaluate={%
+      real \sunx, \suny, \sunz, \lightC;
+      \sunx = sin(\sLongit)*cos(\sLatit);
+      \suny = sin(\sLatit);
+      \sunz = cos(\sLongit)*cos(\sLatit);
+    }
+  }
+}
+\pgfkeys{/tikz/.cd,
+  latitude/.store in=\aLatit,  % observer's latitude
+  latitude=0
+}
+\pgfkeys{/tikz/.cd,
+  longitude/.store in=\aLongit,  % observer's longitude
+  longitude=0  % corresponds to x=0
+}
+\pgfkeys{/tikz/.cd,
+  sun latitude/.store in=\sLatit,
+  sun latitude = 80
+}
+\pgfkeys{/tikz/.cd,
+  sun longitude/.store in=\sLongit, 
+  sun longitude=90
+}
+\pgfkeys{/tikz/.cd,
+  contrast/.store in=\lightC,  % light contrast \in [0, 1]
+  contrast=.5
+}
+\tikzmath{%
+  function hornFaceColor(\i, \j, \N, \M) {%
+    % Verifies if seen when the cone has no base; the color number is
+    % modified by -2000.
+    real \ang;
+    \p@x = 1/\rB +(\i-.5)/\N*(1/\rT -1/\rB);
+    \r@ = 1/\p@x;
+    \t = 360*((\j-.5)/\M);
+    \ux = \vx*cos(\t) +\wx*sin(\t);
+    \uy = \vy*cos(\t) +\wy*sin(\t);
+    \uz = \vz*cos(\t) +\wz*sin(\t);
+    % modification needed when the radii are different
+    \ang = atan(\r@*\r@); % angle with (Oy)
+    \ux = \ux*cos(\ang) +\nx*sin(\ang);
+    \uy = \uy*cos(\ang) +\ny*sin(\ang);
+    \uz = \uz*cos(\ang) +\nz*sin(\ang);    
+    \res = \ux*\tox + \uy*\toy + \uz*\toz;
+    \tmp = int(100*\lightC*(\ux*\sunx + \uy*\suny + \uz*\sunz));
+    if \res>0 then {% if seen
+      return \tmp;
+    } else {return {-2000 +\tmp};};    
+  };
+}
+\makeatother
+\tikzset{%
+  pics/horn/.style args={xB=#1, xT=#2}{%
+    % The interval for which the horn will be drawn (the curve y=1/x
+    % rotated around the (Ox) axis).
+    code={%
+      \colorlet{mainColor}{.}
+      \colorlet{innerColor}{-mainColor!50!gray}
+      \colorlet{leftRGB{1}}{white}
+      \colorlet{leftRGB{0}}{mainColor!50!black}
+      \colorlet{leftRGB{3}}{white}
+      \colorlet{leftRGB{2}}{innerColor!50!black}
+      \tikzmath{%  
+        real \rB, \rT;
+        \rB = 1/#1;
+        \rT = 1/#2;
+        integer \Nx, \Nyz, \k, \j, \prevj, \i, \previ;
+        \Nx = 50;
+        \Nyz = 64;
+        real \tmpBT, \tmpx, \tmpy, \tmpz, \tmpcst, \cstForColor;
+        real \px, \nx, \ny, \nz, \vx, \vy, \vz, \wx, \wy, \wz;
+        \nx = 1;
+        \ny = 0;
+        \nz = 0;
+        \vx = 0;
+        \vy = 1;
+        \vz = 0;
+        \wx = 0;
+        \wy = 0;
+        \wz = 1;
+        %% points \P{\i,\j}
+        % \i for x direction and
+        % \j for directions in the plane (Oyz)
+        for \i in {0, ..., \Nx}{%
+          \px = #1 +\i/\Nx*(#2 -#1);
+          \r = 1/\px;
+          for \j in {0, ..., \Nyz}{%
+            \t = \j/\Nyz*360;
+            \Px{\i,\j} = \px +\r*\vx*cos(\t) +\r*\wx*sin(\t);
+            \Py{\i,\j} = \r*\vy*cos(\t) +\r*\wy*sin(\t);
+            \Pz{\i,\j} = \r*\vz*cos(\t) +\r*\wz*sin(\t);
+          };
+        };
+        %% faces
+        for \i in {1, ..., \Nx}{%
+          \previ = \i -1;
+          for \j in {1, ..., \Nyz}{%
+            \prevj = \j -1;
+            \cstForColor = hornFaceColor(\i, \j, \Nx, \Nyz);
+            if \cstForColor>-999 then {%
+              if \cstForColor>=0. then { \k = 1; } else {%
+                \k = 0;  % in the shade for leftRGB{}
+                \cstForColor = int(abs(\cstForColor));
+              };
+              {%
+                \filldraw[leftRGB{\k}!\cstForColor!mainColor, line width=.001pt]
+                (\Px{\previ,\prevj}, \Py{\previ,\prevj}, \Pz{\previ,\prevj})
+                -- (\Px{\previ,\j}, \Py{\previ,\j}, \Pz{\previ,\j})
+                -- (\Px{\i,\j}, \Py{\i,\j}, \Pz{\i,\j})
+                -- (\Px{\i,\prevj}, \Py{\i,\prevj}, \Pz{\i,\prevj})
+                -- cycle;
+              };            
+            } else {%
+              \cstForColor = -(\cstForColor +2000);  % back to -value
+              if \cstForColor>=0. then {%
+                \k = 3;
+                \cstForColor = \cstForColor;
+              } else {%
+                \k = 2;  % in the shade for leftRGB{}
+                \cstForColor = int(abs(\cstForColor));
+              };
+              {%
+                \begin{pgfonlayer}{background} 
+                  \filldraw[leftRGB{\k}!\cstForColor!innerColor,
+                  line width=.001pt]
+                  (\Px{\previ,\prevj}, \Py{\previ,\prevj}, \Pz{\previ,\prevj})
+                  -- (\Px{\previ,\j}, \Py{\previ,\j}, \Pz{\previ,\j})
+                  -- (\Px{\i,\j}, \Py{\i,\j}, \Pz{\i,\j})
+                  -- (\Px{\i,\prevj}, \Py{\i,\prevj}, \Pz{\i,\prevj})
+                  -- cycle;
+                \end{pgfonlayer}
+              };
+            };
+          };
+        };
+      }  % end tikzmath
+    }
+  },
+}
+
+
+\begin{tikzpicture}[view={-30}{15}, sun={-50}{45}{.75}]
+  \pgfdeclarelayer{background}
+  \pgfsetlayers{background,main}
+  
+  \draw[->] (0, 0, 0) -- (2, 0, 0) node[shift={(.2, 0, 0)}, above] {$x$};
+  \draw[->] (0, 0, 0) -- (0, 2, 0) node[shift={(0, .2, 0)}] {$y$};
+  \draw[->] (0, 0, 0) -- (0, 0, 2) node[shift={(0, 0, .2)}, left] {$z$};
+
+  \path (0, 0) pic[black!80!red!70, scale=1.5]
+  {horn={xB=.95, xT=7}};
+\end{tikzpicture}
+\end{document}

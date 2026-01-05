@@ -1,0 +1,85 @@
+%!TEX program = xelatex
+\documentclass{article}
+
+% Layout and paper size
+\usepackage[a4paper, total={6in, 8in}]{geometry}
+
+% Language
+\usepackage[english]{babel}
+
+% Font setup for XeLaTeX
+% \usepackage{microtype}
+% \usepackage{fontspec}
+% \setmainfont{Latin Modern Roman}
+
+% Math packages
+\usepackage{amsmath, amssymb, amsfonts}
+\usepackage{mathtools}
+
+% Graphics and diagrams
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathreplacing,arrows.meta}
+
+\input{preamble}
+
+
+\title{Acoustics of the Gabriel's Horn}
+\author{Dias Suleimenov}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section*{Introduction}
+One time, I made joke with friends, that I was given task to clean Gabriel's horn out of rust in order to play it. It brings question, how it will actually sound like? So here is the analysis.
+
+\section*{Theoretical setup}
+I model the Gabriel's horn with Webster's horn equation (\ref{eq:webster}). This differential equation describes the pressure inside the horn with cross-sectional area $S(x)$ and assumes that waves are approximately plane. For derivation see appendix.
+
+\begin{equation}
+    \frac{1}{S(x)} \frac{\partial}{\partial x} \left(S(x) \frac{\partial p}{\partial x}\right) = \frac{1}{c^2} \frac{\partial^2 p}{\partial t^2}
+\end{equation}
+Where, $p(x, t)$ is the pressure in the horn and $c$ is speed of the sound.
+
+Substituting cross-sectional area of horn $S(x) = \frac{\pi}{x^2}$, we get following equation.
+
+\begin{equation}
+    \frac{x^2}{\pi} \frac{\partial}{\partial x} \left(\frac{\pi}{x^2}  \frac{\partial p}{\partial x}\right) = \frac{1}{c^2} \frac{\partial^2 p}{\partial t^2}
+\end{equation}
+
+% NOT SURE, Analyze it well. 
+Now we need focus on waves that exhibit the harmonic oscilations, so we make substitution of $p(x, t) = \psi(x) \cdot e^{-i \omega t}$.
+\begin{equation}
+    \frac{x^2}{\pi} \frac{\partial}{\partial x} \left(\frac{\pi}{x^2}  \frac{\partial \psi}{\partial x} e^{-i \omega t}\right) = - \left(\frac{\omega}{c}\right)^2 \psi(x).
+\end{equation}
+We introduce new variable $k = w/c$, for simplification of notation. 
+
+\dots
+
+\begin{equation}
+    x^2 \left( \frac{\partial}{\partial x} \left( \frac{1}{x^2} \right) \frac{\partial \psi}{\partial x} + \frac{1}{x^2} \frac{\partial^2 \psi}{\partial x^2}\right)
+\end{equation}
+
+\dots
+
+\begin{equation}
+    \frac{\partial^2 \psi}{\partial x^2} - \frac{2}{x} \frac{\partial \psi}{\partial x} + k^2 \psi = 0.
+\end{equation}
+
+We impose initional condition such as that at throat ($x = 1$) is open end, $\frac{\partial \psi}{\partial x} = 0$, and closed end at $x = L$ with $\psi{L, t} = 0$.
+
+The system that we described can be solved by Bessel equations, with some \dots
+
+We arrive at 
+
+\begin{equation}
+    k (L - 1) + \arctan(k) = n \pi
+\end{equation}
+
+We solve following using fixed point iterations algorithm.
+
+
+% Appendix: ADD derivation of equation
+\end{document}
